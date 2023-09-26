@@ -1,4 +1,6 @@
 const asyncHandler = require("express-async-handler");
+const { StatusCodes } = require('http-status-codes')
+const { BadRequestError, UnauthenticatedError } = require('../errors')
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
@@ -9,13 +11,11 @@ const User = require("../models/userModel");
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
   if (!username || !email || !password) {
-    res.status(400);
-    throw new Error("All fields are mandatory!");
+    throw new BadRequestError('Please provide username, email and password')
   }
   const userAvailable = await User.findOne({ email });
   if (userAvailable) {
-    res.status(400);
-    throw new Error("User already registered!");
+    throw new BadRequestError('User already exists with this email')
   }
 
   //Hash password
@@ -28,23 +28,22 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   console.log(`User created ${user}`);
-  if (user) {
-    res.status(201).json({ _id: user.id, email: user.email });
-  } else {
-    res.status(400);
-    throw new Error("User data is not valid");
+  if (!user) {
+    throw new BadRequestError('Please provide valid data')
   }
-  res.json({ message: "Register the user" });
+
+  res.status(StatusCodes.OK).json({ _id: user.id, email: user.email})
+  
 });
 
 //@desc Login user
 //@route POST /api/users/login
 //@access public
+
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    res.status(400);
-    throw new Error("All fields are mandatory!");
+    throw new BadRequestError('Please provide email and password')
   }
   const user = await User.findOne({ email });
   //compare password with hashedpassword
@@ -60,10 +59,10 @@ const loginUser = asyncHandler(async (req, res) => {
       process.env.ACCESS_TOKEN_SECERT,
       { expiresIn: "15m" }
     );
-    res.status(200).json({ accessToken });
+   
+    res.status(StatusCodes.OK).json({ accessToken })
   } else {
-    res.status(401);
-    throw new Error("email or password is not valid");
+    throw new UnauthenticatedError('Invalid Credentials')
   }
 });
 
@@ -71,7 +70,7 @@ const loginUser = asyncHandler(async (req, res) => {
 //@route POST /api/users/current
 //@access private
 const currentUser = asyncHandler(async (req, res) => {
-  res.json(req.user);
+  res.status(StatusCodes.OK).json( req.user )
 });
 
 module.exports = { registerUser, loginUser, currentUser };

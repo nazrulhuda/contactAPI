@@ -1,11 +1,13 @@
 const asyncHandler = require("express-async-handler");
 const Contact = require("../models/contactModel");
+const { StatusCodes } = require('http-status-codes')
+const { BadRequestError, NotFoundError, UnauthenticatedError } = require('../errors')
 //@desc Get all contacts
 //@route GET /api/contacts
 //@access private
 const getContacts = asyncHandler(async (req, res) => {
   const contacts = await Contact.find({ user_id: req.user.id });
-  res.status(200).json(contacts);
+  res.status(StatusCodes.OK).json( contacts )
 });
 
 //@desc Create New contact
@@ -15,8 +17,7 @@ const createContact = asyncHandler(async (req, res) => {
   console.log("The request body is :", req.body);
   const { name, email, phone } = req.body;
   if (!name || !email || !phone) {
-    res.status(400);
-    throw new Error("All fields are mandatory !");
+    throw new BadRequestError('All data should be provided')
   }
   const contact = await Contact.create({
     name,
@@ -25,7 +26,7 @@ const createContact = asyncHandler(async (req, res) => {
     user_id: req.user.id,
   });
 
-  res.status(201).json(contact);
+  res.status(StatusCodes.CREATED).json({ contact })
 });
 
 //@desc Get contact
@@ -34,10 +35,9 @@ const createContact = asyncHandler(async (req, res) => {
 const getContact = asyncHandler(async (req, res) => {
   const contact = await Contact.findById(req.params.id);
   if (!contact) {
-    res.status(404);
-    throw new Error("Contact not found");
+    throw new NotFoundError(`No contact with id ${req.params.id}`)
   }
-  res.status(200).json(contact);
+  res.status(StatusCodes.OK).json(contact)
 });
 
 //@desc Update contact
@@ -46,13 +46,11 @@ const getContact = asyncHandler(async (req, res) => {
 const updateContact = asyncHandler(async (req, res) => {
   const contact = await Contact.findById(req.params.id);
   if (!contact) {
-    res.status(404);
-    throw new Error("Contact not found");
+    throw new NotFoundError(`No contact with ${req.params.id}`)
   }
 
   if (contact.user_id.toString() !== req.user.id) {
-    res.status(403);
-    throw new Error("User don't have permission to update other user contacts");
+    throw new UnauthenticatedError('Authetication invalid')
   }
 
   const updatedContact = await Contact.findByIdAndUpdate(
@@ -60,8 +58,8 @@ const updateContact = asyncHandler(async (req, res) => {
     req.body,
     { new: true }
   );
-
-  res.status(200).json(updatedContact);
+  
+  res.status(StatusCodes.OK).json(updateContact)
 });
 
 //@desc Delete contact
@@ -70,15 +68,14 @@ const updateContact = asyncHandler(async (req, res) => {
 const deleteContact = asyncHandler(async (req, res) => {
   const contact = await Contact.findById(req.params.id);
   if (!contact) {
-    res.status(404);
-    throw new Error("Contact not found");
+    throw new NotFoundError(`No contact with ${req.params.id}`)
   }
   if (contact.user_id.toString() !== req.user.id) {
-    res.status(403);
-    throw new Error("User don't have permission to update other user contacts");
+    throw new UnauthenticatedError('Authetication invalid')
   }
   await Contact.deleteOne({ _id: req.params.id });
-  res.status(200).json(contact);
+
+  res.status(StatusCodes.OK).json(contact)
 });
 
 module.exports = {
