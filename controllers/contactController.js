@@ -59,7 +59,7 @@ const updateContact = asyncHandler(async (req, res) => {
     { new: true }
   );
   
-  res.status(StatusCodes.OK).json(updateContact)
+  res.status(StatusCodes.OK).json({"success": true, "updated conctact for": updatedContact})
 });
 
 //@desc Delete contact
@@ -75,7 +75,7 @@ const deleteContact = asyncHandler(async (req, res) => {
   }
   await Contact.deleteOne({ _id: req.params.id });
 
-  res.status(StatusCodes.OK).json(contact)
+  res.status(StatusCodes.OK).json({"success": true, contact})
 });
 
 module.exports = {
