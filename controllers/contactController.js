@@ -15,15 +15,17 @@ const getContacts = asyncHandler(async (req, res) => {
 //@access private
 const createContact = asyncHandler(async (req, res) => {
   console.log("The request body is :", req.body);
-  const { name, email, phone } = req.body;
+  const { name, email, phone, image } = req.body;
   if (!name || !email || !phone) {
     throw new BadRequestError('All data should be provided')
   }
+  
   const contact = await Contact.create({
     name,
     email,
     phone,
     user_id: req.user.id,
+    image: image ?? null,
   });
 
   res.status(StatusCodes.CREATED).json({ contact })
